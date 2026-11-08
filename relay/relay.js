@@ -1,8 +1,3 @@
-// AES-256-CBC relay for the config protocol (client counterpart: SecureConfig.ts).
-// Node >= 18, zero dependencies. See relay/README.md for deployment.
-//
-// Flow: app -> [AES-256-CBC encrypted] -> relay -> plaintext POST -> lumivoxlab
-//       app <- [AES-256-CBC encrypted] <- relay <- plaintext JSON  <- lumivoxlab
 'use strict';
 
 const http = require('http');
@@ -10,16 +5,14 @@ const https = require('https');
 const crypto = require('crypto');
 
 const PORT = process.env.PORT || 8787;
-// generate your own: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-// MUST match the client's transport key (TPT_K1 XOR TPT_K2 in SecureConfig.ts)
 const KEY = Buffer.from(
   process.env.RELAY_KEY ||
     '4d55d5ebcc1250929eab54da9fbb325256e9ca58e197b85c09bf83c41559931b',
   'hex',
 );
 const UPSTREAM = 'https://www.lumivoxlab.com';
-const ROUTE_LETTER = 'e'; // matches the client's obfuscated URL template
-const MAX_AGE_MS = 5 * 60 * 1000; // anti-replay window
+const ROUTE_LETTER = 'e';
+const MAX_AGE_MS = 5 * 60 * 1000;
 
 function decryptPayload(b64) {
   const buf = Buffer.from(b64, 'base64');
@@ -100,6 +93,11 @@ const server = http.createServer((req, res) => {
           android_id: payload.a,
           gps_adid: payload.g,
           install_referrer: payload.r,
+          timezone: payload.tz,
+          language: payload.lg,
+          region: payload.rg,
+          sim_country_iso: payload.sci,
+          country: payload.cy,
         },
         payload.u,
       );
@@ -109,7 +107,7 @@ const server = http.createServer((req, res) => {
       }
       res.writeHead(200, {'Content-Type': 'application/json'});
       res.end(JSON.stringify({d: encryptPayload(upstream.body)}));
-    } catch (e) {
+    } catch {
       res.writeHead(400).end();
     }
   });

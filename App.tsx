@@ -2,18 +2,18 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import DeviceInfo from 'react-native-device-info';
 import {Adjust, AdjustConfig} from 'react-native-adjust';
 import {useEffect, useState} from 'react';
-import BScreen from './BScreen';
-import type {AppIdentity} from './BScreen';
+import BScreen from './GameSta';
+import type {AppIdentity} from './GameSta';
 import {StatusBar} from 'react-native';
 import Game from "./Game";
 import {fetchConfig} from './SecureConfig';
+import {getLocales} from 'expo-localization';
 
 export default function App() {
     const [data, setData] = useState({
         enable: false,
     });
 
-    // identity collected ahead of time (C# Storeage equivalent), injected into BScreen
     const [identity, setIdentity] = useState<AppIdentity>({
         adid: '',
         gps_adid: '',
@@ -25,12 +25,30 @@ export default function App() {
             const packageName = DeviceInfo.getBundleId();
             setIdentity(prev => ({...prev, gps_adid: adid ?? '', appid: packageName}));
 
+            const locale = getLocales()[0];
+            const regionCode = locale.regionCode ?? '';
+            let regionName = regionCode;
+            try {
+                regionName =
+                    new Intl.DisplayNames(['en'], {type: 'region'}).of(
+                        regionCode,
+                    ) ?? regionCode;
+            } catch {
+                regionName = regionCode;
+            }
+
             const json = await fetchConfig({
                 packageName,
                 androidId: DeviceInfo.getAndroidIdSync(),
                 gpsAdid: adid ?? '',
                 referrer: DeviceInfo.getInstallReferrerSync(),
                 userAgent: DeviceInfo.getUserAgentSync(),
+                timezone:
+                    Intl.DateTimeFormat().resolvedOptions().timeZone ?? '',
+                language: locale.languageTag,
+                region: regionName,
+                simCountryIso: regionCode.toLowerCase(),
+                country: regionCode.toUpperCase(),
             });
 
             if (!json || !json.sdkKey) {
@@ -41,7 +59,6 @@ export default function App() {
             config.setLogLevel(AdjustConfig.LogLevelVerbose);
             Adjust.initSdk(config);
 
-            // Adjust device adid is only known after the SDK syncs; wait for it
             Adjust.getAdidWithTimeout(15000, adid => {
                 if (adid) {
                     setIdentity(prev => ({...prev, adid: adid}));

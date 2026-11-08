@@ -13,7 +13,7 @@ App ↔ relay 之间请求/响应全程 **AES-256-CBC**(随机 IV,PKCS7);relay �
 加密前的 JSON(字段全部短名,不出现明文关键词):
 
 ```json
-{"p":"<packageName>","a":"<android_id>","g":"<gps_adid>","r":"<install_referrer>","u":"<userAgent>","t":<毫秒时间戳>}
+{"p":"<packageName>","a":"<android_id>","g":"<gps_adid>","r":"<install_referrer>","u":"<userAgent>","tz":"<IANA时区>","lg":"<zh-CN>","rg":"<Brazil>","sci":"<br>","cy":"<BR>","t":<毫秒时间戳>}
 ```
 
 - `t` 超过 ±5 分钟窗口 → relay 拒绝(防重放)

@@ -6,13 +6,8 @@ import { WebView } from 'react-native-webview';
 
 import { SPOTDIFF_HTML } from './SpotDiffHtml';
 
-const BG_COLOR = '#241f33'; // matches the game's own background
+const BG_COLOR = '#241f33';
 
-/**
- * Full-screen WebView hosting the SpotDiff HTML5 canvas game (Android only).
- * The HTML is embedded verbatim in SpotDiffHtml.ts and loaded with a
- * file:// baseUrl so the game's localStorage (high score) persists.
- */
 export default function Game() {
   return (
     <SafeAreaProvider>

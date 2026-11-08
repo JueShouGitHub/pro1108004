@@ -1,41 +1,27 @@
-# Rules for EAS Build uploads (overrides .gitignore when present).
-# Same as .gitignore, EXCEPT: keystore (key/nivm.jks) and credentials.json
-# are INCLUDED because the build profiles use credentialsSource: "local".
-
-# dependencies
 node_modules/
 
-# Expo
 .expo/
 dist/
 web-build/
 expo-env.d.ts
 
-# Native (CNG: cloud runs prebuild from app.json — do NOT upload android/)
 /ios
 /android
 .kotlin/
 *.orig.*
 
-# signing: keep the password notes out, but ship the keystore + credentials.json
 key/signing.txt
 
-# Metro
 .metro-health-check*
 
-# debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
 .DS_Store
 
-# local env files
 .env*.local
 
-# typescript
 *.tsbuildinfo
 
-# IDE
 .idea/

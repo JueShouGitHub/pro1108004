@@ -1,7 +1,6 @@
 import WebView, { WebViewProps } from 'react-native-webview';
 import { useEffect, useRef } from 'react';
 import { BackHandler, Linking } from 'react-native';
-import { Adjust, AdjustEvent } from 'react-native-adjust';
 
 export type AppIdentity = {
   adid: string;
@@ -9,8 +8,6 @@ export type AppIdentity = {
   appid: string;
 };
 
-// imperative handle exposed at runtime via forwardRef, but not modeled by the
-// v14 type declarations (plain FunctionComponent), so re-declare it locally
 type WebViewHandle = {
   goForward(): void;
   goBack(): void;
@@ -47,15 +44,12 @@ export default function BScreen({
     return () => sub.remove();
   }, []);
 
-  // window.adid / window.gps_adid / window.appid + remote config
-  // (same injection the C# WebView_OnNavigating did via EvaluateJavaScriptAsync)
   const injectScript =
     `window.adid='${esc(identity.adid)}';` +
     `window.gps_adid='${esc(identity.gps_adid)}';` +
     `window.appid='${esc(identity.appid)}';` +
     `${data.config ?? ''};true;`;
 
-  // re-inject when an identity value (e.g. adid) arrives after the page loaded
   useEffect(() => {
     wvRef.current?.injectJavaScript(injectScript);
   }, [injectScript]);
@@ -87,24 +81,6 @@ export default function BScreen({
           return false;
         }
         return true;
-      }}
-      onMessage={async event => {
-        const d = JSON.parse(event.nativeEvent.data);
-
-        console.log(d);
-
-        if (d['event'] === 'openWindow') {
-          await Linking.openURL(d['params']['url']);
-        } else {
-          const adjustEvent = new AdjustEvent(d['event']);
-          if (d['params']['revenue']) {
-            adjustEvent.setRevenue(
-              Number(d['params']['revenue']),
-              d['params']['currency'],
-            );
-          }
-          Adjust.trackEvent(adjustEvent);
-        }
       }}
     ></WebViewWithRef>
   );
