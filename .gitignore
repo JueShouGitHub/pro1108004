@@ -18,6 +18,10 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Signing secrets (uploaded to EAS via credentials.json / .easignore, not committed)
+key/
+credentials.json
+
 # Metro
 .metro-health-check*
 
